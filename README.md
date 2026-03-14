@@ -93,32 +93,14 @@ New elections are auto-detected from URL patterns. You can also pass custom elec
 
 ## How It Works
 
-```
-                        ┌─────────────────────┐
-                        │   StemwijzerScraper  │
-                        │    (orchestrator)    │
-                        └─────────┬───────────┘
-                                  │
-                    ┌─────────────┴─────────────┐
-                    ▼                           ▼
-          ┌─────────────────┐         ┌─────────────────┐
-          │   API Scraper   │         │ Browser Scraper  │
-          │   (primary)     │         │   (fallback)     │
-          └────────┬────────┘         └────────┬────────┘
-                   │                           │
-                   ▼                           ▼
-          ┌─────────────────┐         ┌─────────────────┐
-          │ HTTP fetch from  │         │ Playwright       │
-          │ data endpoint    │         │ network intercept│
-          │ + base64 decode  │         │ or DOM scraping  │
-          └────────┬────────┘         └────────┬────────┘
-                   │                           │
-                   └─────────────┬─────────────┘
-                                 ▼
-                       ┌─────────────────┐
-                       │  Structured JSON │
-                       │  (per election)  │
-                       └─────────────────┘
+```mermaid
+graph TD
+    A[StemwijzerScraper\nOrchestrator] --> B[API Scraper\nPrimary]
+    A --> C[Browser Scraper\nFallback]
+    B --> D[HTTP fetch + base64 decode]
+    C --> E[Playwright network intercept\nor DOM scraping]
+    D --> F[Structured JSON\nper election]
+    E --> F
 ```
 
 1. **API-first (fast):** Fetches data from StemWijzer data endpoints via HTTP. Handles base64-encoded responses and optional AES decryption.
