@@ -1,14 +1,27 @@
+<div align="center">
+
 # nl-voting-data-scraper
 
-[![PyPI](https://img.shields.io/pypi/v/nl-voting-data-scraper?color=green)](https://pypi.org/project/nl-voting-data-scraper/)
-[![Downloads](https://static.pepy.tech/badge/nl-voting-data-scraper/month)](https://pepy.tech/project/nl-voting-data-scraper)
+[![PyPI](https://img.shields.io/pypi/v/nl-voting-data-scraper.svg)](https://pypi.org/project/nl-voting-data-scraper/)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/nl-voting-data-scraper)](https://pypistats.org/packages/nl-voting-data-scraper)
 [![Python package](https://github.com/rhnfzl/nl-voting-data-scraper/actions/workflows/publish.yml/badge.svg)](https://github.com/rhnfzl/nl-voting-data-scraper/actions/workflows/publish.yml)
-[![Python](https://img.shields.io/pypi/pyversions/nl-voting-data-scraper)](https://pypi.org/project/nl-voting-data-scraper/)
-[![License](https://img.shields.io/pypi/l/nl-voting-data-scraper)](https://github.com/rhnfzl/nl-voting-data-scraper/blob/main/LICENSE)
+[![Python Versions](https://img.shields.io/badge/Python-3.11%20|%203.12%20|%203.13-blue)](https://pypi.org/project/nl-voting-data-scraper/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Scrape Dutch voting advice ([StemWijzer](https://stemwijzer.nl)) data for any election — municipal, national, European, or provincial.
+</div>
 
 Outputs structured JSON with party positions, policy statements, and metadata. Reusable across election cycles.
+
+### Key Features
+
+- **Hybrid scraping**: API-first (fast HTTP) with Playwright browser automation fallback
+- **Election-agnostic**: Municipal, national (Tweede Kamer), European Parliament, and provincial elections
+- **CLI + Library**: Use from the command line or import in Python
+- **Caching & resume**: File-based cache for interrupted batch scrapes (258+ municipalities)
+- **Rate limiting**: Token-bucket rate limiter with exponential backoff
+- **Base64/AES decoding**: Handles encoded StemWijzer API responses automatically
+- **Structured output**: JSON format compatible with downstream vote guide applications
 
 ## Installation
 
@@ -80,9 +93,35 @@ New elections are auto-detected from URL patterns. You can also pass custom elec
 
 ## How It Works
 
-**Hybrid approach:**
+```
+                        ┌─────────────────────┐
+                        │   StemwijzerScraper  │
+                        │    (orchestrator)    │
+                        └─────────┬───────────┘
+                                  │
+                    ┌─────────────┴─────────────┐
+                    ▼                           ▼
+          ┌─────────────────┐         ┌─────────────────┐
+          │   API Scraper   │         │ Browser Scraper  │
+          │   (primary)     │         │   (fallback)     │
+          └────────┬────────┘         └────────┬────────┘
+                   │                           │
+                   ▼                           ▼
+          ┌─────────────────┐         ┌─────────────────┐
+          │ HTTP fetch from  │         │ Playwright       │
+          │ data endpoint    │         │ network intercept│
+          │ + base64 decode  │         │ or DOM scraping  │
+          └────────┬────────┘         └────────┬────────┘
+                   │                           │
+                   └─────────────┬─────────────┘
+                                 ▼
+                       ┌─────────────────┐
+                       │  Structured JSON │
+                       │  (per election)  │
+                       └─────────────────┘
+```
 
-1. **API-first (fast):** Tries to fetch data from StemWijzer data endpoints via HTTP. Handles base64-encoded responses and optional AES decryption.
+1. **API-first (fast):** Fetches data from StemWijzer data endpoints via HTTP. Handles base64-encoded responses and optional AES decryption.
 2. **Browser fallback:** If the API fails, uses Playwright to load the frontend, intercept network requests, and capture the data. Falls back to DOM extraction as a last resort.
 
 ## Output Format
@@ -150,6 +189,10 @@ playwright install chromium
 pytest
 ```
 
+## Acknowledgements
+
+Inspired by [afvanwoudenberg/stemwijzer](https://github.com/afvanwoudenberg/stemwijzer).
+
 ## License
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
