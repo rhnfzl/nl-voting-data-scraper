@@ -1,4 +1,4 @@
-"""Output formatting — write scraped data to files."""
+"""Output formatting: write scraped data to files."""
 
 from __future__ import annotations
 

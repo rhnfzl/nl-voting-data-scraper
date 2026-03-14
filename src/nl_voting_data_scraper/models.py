@@ -34,7 +34,7 @@ class Statement(BaseModel):
     id: int
     theme: str = ""
     themeId: str = Field(default="", alias="themeId")
-    title: Any  # str | list[str | AnnotatedText] — use Any for robust parsing
+    title: Any  # str | list[str | AnnotatedText] - use Any for robust parsing
     isShootout: bool = Field(default=False, alias="isShootout")
     index: int = 0
     moreInfo: MoreInfo | dict[str, str] | None = Field(default=None, alias="moreInfo")

@@ -1,4 +1,4 @@
-"""HTTP-based API scraper — the primary (fast) scraping path.
+"""HTTP-based API scraper: the primary (fast) scraping path.
 
 Fetches data from StemWijzer data endpoints, handles base64 decoding
 and optional AES decryption.

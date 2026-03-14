@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class StemwijzerScraper:
-    """Main scraper — API-first with browser fallback.
+    """Main scraper: API-first with browser fallback.
 
     Usage:
         async with StemwijzerScraper("gr2026") as scraper:
