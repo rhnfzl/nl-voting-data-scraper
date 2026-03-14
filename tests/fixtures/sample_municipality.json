@@ -1,0 +1,162 @@
+{
+  "parties": [
+    {
+      "id": 239494,
+      "name": "Lokaal Landsmeer",
+      "fullName": "Lokaal Landsmeer",
+      "logo": "party_logo_239494.png",
+      "logoIndex": 0,
+      "participates": true,
+      "website": "https://www.lokaal-landsmeer.nl/",
+      "hasSeats": true,
+      "statements": [
+        {
+          "id": 239514,
+          "position": "agree",
+          "explanation": "Zodra dit kan door slim te werken als gemeente en out of the box te denken, zeker doen.",
+          "accessibility": {
+            "explanation": "Zodra dit kan door slim te werken als gemeente en out of the box te denken, zeker doen."
+          }
+        },
+        {
+          "id": 239531,
+          "position": "agree",
+          "explanation": "Steeds harder nodig, maar ook gezond.",
+          "accessibility": {
+            "explanation": "Steeds harder nodig, maar ook gezond."
+          }
+        },
+        {
+          "id": 239547,
+          "position": "agree",
+          "explanation": "Na de wijkschouw werd het Lokaal Landsmeer duidelijk. Het is een bende geworden nu Amsterdam de problemen wederom over de schutting heeft geworpen. Lokaal Landsmeer wil een vergunning voor Ilpers, Landsmeerders en Purmerlanders voor de hele gemeente. En blauwe zones voor “gasten”.",
+          "accessibility": {
+            "explanation": "Na de wijkschouw werd het Lokaal Landsmeer duidelijk. Het is een bende geworden nu Amsterdam de problemen wederom over de schutting heeft geworpen. Lokaal Landsmeer wil een vergunning voor Ilpers, Landsmeerders en Purmerlanders voor de hele gemeente. En blauwe zones voor “gasten”."
+          }
+        }
+      ],
+      "shootoutStatements": [
+        {
+          "id": 239515,
+          "position": "disagree",
+          "explanation": "De toeristenbelasting is hoog genoeg, er moet alleen goed geïnd gaan worden.",
+          "accessibility": {
+            "explanation": "De toeristenbelasting is hoog genoeg, er moet alleen goed geïnd gaan worden."
+          }
+        }
+      ],
+      "index": 1
+    },
+    {
+      "id": 239497,
+      "name": "GROENLINKS / Partij van de Arbeid (PvdA)",
+      "fullName": "GROENLINKS / Partij van de Arbeid (PvdA)",
+      "logo": "party_logo_239497.png",
+      "logoIndex": 1,
+      "participates": true,
+      "website": "https://landsmeer.groenlinkspvda.nl",
+      "hasSeats": true,
+      "statements": [
+        {
+          "id": 239514,
+          "position": "disagree",
+          "explanation": "Naast een bijdrage uit het gemeentefonds van het Rijk kent de gemeente ook inkomsten uit de onroerendzaakbelasting. De hoogte van deze belasting is vergelijkbaar met die van andere gemeenten in de regio. Wij zien geen aanleiding om deze nu te verlagen.",
+          "accessibility": {
+            "explanation": "Naast een bijdrage uit het gemeentefonds van het Rijk kent de gemeente ook inkomsten uit de onroerendzaakbelasting. De hoogte van deze belasting is vergelijkbaar met die van andere gemeenten in de regio. Wij zien geen aanleiding om deze nu te verlagen."
+          }
+        },
+        {
+          "id": 239531,
+          "position": "agree",
+          "explanation": "Landsmeer is een waterrijke gemeente. Het leren zwemmen moet verplicht zijn en kan het best worden georganiseerd vanuit het basisonderwijs. De gemeente moet indien door de schoolbesturen gewenst, financieel bijdragen.",
+          "accessibility": {
+            "explanation": "Landsmeer is een waterrijke gemeente. Het leren zwemmen moet verplicht zijn en kan het best worden georganiseerd vanuit het basisonderwijs. De gemeente moet indien door de schoolbesturen gewenst, financieel bijdragen."
+          }
+        },
+        {
+          "id": 239547,
+          "position": "disagree",
+          "explanation": "In Landsmeer is geen betaald parkeren. Hier kunnen geen parkeervergunningen worden ingevoerd.",
+          "accessibility": {
+            "explanation": "In Landsmeer is geen betaald parkeren. Hier kunnen geen parkeervergunningen worden ingevoerd."
+          }
+        }
+      ],
+      "shootoutStatements": [
+        {
+          "id": 239515,
+          "position": "agree",
+          "explanation": "Toeristen die verblijven in Landsmeer dragen met afdracht van toeristenbelasting bij aan het behoud van de kwaliteit van Landsmeer. Met de inkomsten maken we Landsmeer het bezoeken waard.",
+          "accessibility": {
+            "explanation": "Toeristen die verblijven in Landsmeer dragen met afdracht van toeristenbelasting bij aan het behoud van de kwaliteit van Landsmeer. Met de inkomsten maken we Landsmeer het bezoeken waard."
+          }
+        }
+      ],
+      "index": 2
+    }
+  ],
+  "statements": [
+    {
+      "id": 239560,
+      "theme": "Vliegverkeer",
+      "themeId": "vliegverkeer",
+      "title": "De gemeente Landsmeer moet bij de rijksoverheid en Schiphol pleiten voor minder vliegverkeer.",
+      "isShootout": false,
+      "index": 1
+    },
+    {
+      "id": 239511,
+      "theme": "Referendum",
+      "themeId": "referendum",
+      "title": [
+        " De inwoners van Landsmeer moeten over belangrijke onderwerpen hun mening kunnen blijven geven via een ",
+        {
+          "text": "referendum",
+          "information": "Volksraadpleging waarbij inwoners zich kunnen uitspreken over een politieke kwestie. De gemeenteraad is niet verplicht de uitslag te volgen, dat is wettelijk niet mogelijk.",
+          "accessibility": {
+            "information": "Volksraadpleging waarbij inwoners zich kunnen uitspreken over een politieke kwestie. De gemeenteraad is niet verplicht de uitslag te volgen, dat is wettelijk niet mogelijk."
+          }
+        },
+        "."
+      ],
+      "isShootout": false,
+      "index": 2
+    },
+    {
+      "id": 239545,
+      "theme": "Parkeerplaatsen bij winkelcentrum",
+      "themeId": "parkeerplaatsen-bij-winkelcentrum",
+      "title": "Er moeten meer parkeerplaatsen komen bij het winkelcentrum in Landsmeer.",
+      "isShootout": false,
+      "index": 3
+    }
+  ],
+  "shootoutStatements": [
+    {
+      "id": 239515,
+      "theme": "Toeristenbelasting",
+      "themeId": "toeristenbelasting",
+      "title": [
+        " De ",
+        {
+          "text": "toeristenbelasting",
+          "information": "De belasting die je moet betalen als je in een hotel of op een camping bijft slapen.",
+          "accessibility": {
+            "information": "De belasting die je moet betalen als je in een hotel of op een camping bijft slapen."
+          }
+        },
+        " moet omhoog."
+      ],
+      "isShootout": true,
+      "index": 30
+    }
+  ],
+  "votematch": {
+    "id": 239493,
+    "name": "Landsmeer",
+    "context": "2026GR",
+    "date": "15-01-2026",
+    "remote_id": "GM0415",
+    "langcode": "nl"
+  }
+}

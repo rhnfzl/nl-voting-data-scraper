@@ -1,0 +1,42 @@
+[
+  {
+    "id": 206918,
+    "name": "Groningen",
+    "source": "GM0014-en",
+    "remoteId": "GM0014",
+    "language": "en",
+    "decrypt": true
+  },
+  {
+    "id": 206918,
+    "name": "Groningen",
+    "source": "GM0014-nl",
+    "remoteId": "GM0014",
+    "language": "nl",
+    "decrypt": true
+  },
+  {
+    "id": 108705,
+    "name": "Almere",
+    "source": "GM0034",
+    "remoteId": "GM0034",
+    "language": "nl",
+    "decrypt": true
+  },
+  {
+    "id": 125266,
+    "name": "Veendam",
+    "source": "GM0047",
+    "remoteId": "GM0047",
+    "language": "nl",
+    "decrypt": true
+  },
+  {
+    "id": 239897,
+    "name": "Zeewolde",
+    "source": "GM0050",
+    "remoteId": "GM0050",
+    "language": "nl",
+    "decrypt": true
+  }
+]
