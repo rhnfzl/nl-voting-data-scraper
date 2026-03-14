@@ -1,5 +1,11 @@
 # nl-voting-data-scraper
 
+[![PyPI](https://img.shields.io/pypi/v/nl-voting-data-scraper?color=green)](https://pypi.org/project/nl-voting-data-scraper/)
+[![Downloads](https://img.shields.io/pypi/dm/nl-voting-data-scraper)](https://pypi.org/project/nl-voting-data-scraper/)
+[![Python package](https://github.com/rhnfzl/nl-voting-data-scraper/actions/workflows/publish.yml/badge.svg)](https://github.com/rhnfzl/nl-voting-data-scraper/actions/workflows/publish.yml)
+[![Python](https://img.shields.io/pypi/pyversions/nl-voting-data-scraper)](https://pypi.org/project/nl-voting-data-scraper/)
+[![License](https://img.shields.io/pypi/l/nl-voting-data-scraper)](https://github.com/rhnfzl/nl-voting-data-scraper/blob/main/LICENSE)
+
 Scrape Dutch voting advice ([StemWijzer](https://stemwijzer.nl)) data for any election — municipal, national, European, or provincial.
 
 Outputs structured JSON with party positions, policy statements, and metadata. Reusable across election cycles.
