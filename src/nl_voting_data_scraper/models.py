@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class AnnotatedText(BaseModel):
@@ -50,6 +50,14 @@ class PartyPosition(BaseModel):
     explanation: str = ""
     accessibility: dict[str, str] | None = None
 
+    @field_validator("explanation", mode="before")
+    @classmethod
+    def coerce_explanation(cls, v: Any) -> str:
+        """Some parties have explanation=False instead of an empty string."""
+        if isinstance(v, bool) or v is None:
+            return ""
+        return str(v)
+
 
 class Party(BaseModel):
     """A political party with its positions on all statements."""
@@ -60,7 +68,7 @@ class Party(BaseModel):
     logo: str = ""
     logoIndex: int = Field(default=0, alias="logoIndex")
     participates: bool = True
-    website: str = ""
+    website: str | None = ""
     hasSeats: bool = Field(default=False, alias="hasSeats")
     statements: list[PartyPosition] = []
     shootoutStatements: list[PartyPosition] = Field(

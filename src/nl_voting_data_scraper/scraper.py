@@ -97,28 +97,21 @@ class StemwijzerScraper:
         self, remote_id: str, language: str = "nl"
     ) -> ElectionData:
         """Scrape a single municipality/election."""
-        source = f"{remote_id}-{language}" if language != "nl" else remote_id
+        # Look up the correct source from the index (handles GM0014-nl vs GM0034)
+        entry = await self._find_index_entry(remote_id, language)
 
         # Check cache
-        cached = self.cache.get(self.config.slug, source)
+        cached = self.cache.get(self.config.slug, entry.source)
         if cached:
-            logger.info(f"Cache hit: {source}")
+            logger.info(f"Cache hit: {entry.source}")
             return cached
 
         # Try API
         if self.use_api and self._api:
-            entry = ElectionIndexEntry(
-                id=0,
-                name=remote_id,
-                source=source,
-                remoteId=remote_id,
-                language=language,
-                decrypt=True,
-            )
             try:
                 return await self._api.fetch_election_data(entry)
             except Exception as e:
-                logger.warning(f"API fetch failed for {source}: {e}")
+                logger.warning(f"API fetch failed for {entry.source}: {e}")
 
         # Fall back to browser
         if self.use_browser:
@@ -126,7 +119,34 @@ class StemwijzerScraper:
             if results:
                 return results[0]
 
-        raise APIScraperError(f"Failed to scrape {source}")
+        raise APIScraperError(f"Failed to scrape {entry.source}")
+
+    async def _find_index_entry(
+        self, remote_id: str, language: str = "nl"
+    ) -> ElectionIndexEntry:
+        """Find the correct index entry for a municipality.
+
+        The source field varies: GM0034 (single language) vs GM0014-nl (multi-language).
+        """
+        try:
+            index = await self.fetch_index()
+            # Exact match on remoteId + language
+            for e in index:
+                if e.remoteId == remote_id and e.language == language:
+                    return e
+            # Fallback: match just remoteId
+            for e in index:
+                if e.remoteId == remote_id:
+                    return e
+        except Exception:
+            pass
+
+        # Construct a best-guess entry if index lookup fails
+        source = f"{remote_id}-{language}" if language != "nl" else remote_id
+        return ElectionIndexEntry(
+            id=0, name=remote_id, source=source,
+            remoteId=remote_id, language=language, decrypt=True,
+        )
 
     async def fetch_index(self) -> list[ElectionIndexEntry]:
         """Fetch the election index."""

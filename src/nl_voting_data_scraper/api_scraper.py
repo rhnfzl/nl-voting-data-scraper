@@ -120,7 +120,7 @@ class APIScraper:
             if cached:
                 return cached
 
-        url = f"{self.config.data_url}/{entry.source}.json"
+        url = f"{self.config.data_url}/{entry.source}/data.json"
         await self.rate_limiter.acquire()
 
         logger.info(f"Fetching {entry.name} ({entry.source})...")

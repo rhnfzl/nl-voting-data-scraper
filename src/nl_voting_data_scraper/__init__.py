@@ -1,6 +1,6 @@
 """nl-voting-data-scraper: Scrape Dutch voting advice (StemWijzer) data for any election."""
 
-__version__ = "0.1.1"
+__version__ = "0.2.0"
 
 from nl_voting_data_scraper.models import (
     ElectionData,

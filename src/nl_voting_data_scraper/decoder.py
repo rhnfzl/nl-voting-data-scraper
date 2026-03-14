@@ -1,7 +1,10 @@
 """Decode and decrypt StemWijzer API responses.
 
-StemWijzer data endpoints return base64-encoded JSON. Some elections
-additionally use AES encryption (indicated by decrypt=true in the index).
+StemWijzer data endpoints use multiple encoding layers:
+- Plain JSON (index.json)
+- JSON string > base64 > URL-encoded JSON (municipality data with decrypt=true)
+- Base64 > JSON (older format)
+- Base64 > AES decrypt > JSON (if encryption key provided)
 """
 
 from __future__ import annotations
@@ -9,6 +12,7 @@ from __future__ import annotations
 import base64
 import json
 import re
+import urllib.parse
 
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
@@ -22,9 +26,10 @@ def decode_response(data: str | bytes, decrypt_key: str | None = None) -> dict |
     """Decode a StemWijzer API response.
 
     Tries strategies in order:
-    1. Plain JSON
-    2. Base64 → JSON
-    3. Base64 → AES decrypt → JSON (if key provided)
+    1. Plain JSON (dict or list)
+    2. JSON string > base64 > URL-decode > JSON (decrypt=true format)
+    3. Base64 > JSON
+    4. Base64 > AES decrypt > JSON (if key provided)
 
     Returns parsed JSON (dict or list).
     """
@@ -33,20 +38,31 @@ def decode_response(data: str | bytes, decrypt_key: str | None = None) -> dict |
 
     data = data.strip()
 
-    # Strategy 1: plain JSON
+    # Strategy 1: plain JSON (dict or list)
     try:
-        return json.loads(data)
+        parsed = json.loads(data)
+        if isinstance(parsed, (dict, list)):
+            return parsed
+        # If parsed is a string, it's likely base64-encoded content (strategy 2)
+        if isinstance(parsed, str):
+            return _decode_b64_urlencoded(parsed)
     except (json.JSONDecodeError, ValueError):
         pass
 
-    # Strategy 2: base64 → JSON
+    # Strategy 2: raw base64 > URL-decode > JSON
+    try:
+        return _decode_b64_urlencoded(data)
+    except Exception:
+        pass
+
+    # Strategy 3: base64 > JSON (without URL encoding)
     try:
         decoded = base64.b64decode(data)
         return json.loads(decoded)
     except Exception:
         pass
 
-    # Strategy 3: base64 → AES decrypt → JSON
+    # Strategy 4: base64 > AES decrypt > JSON
     if decrypt_key:
         try:
             return _aes_decrypt(data, decrypt_key)
@@ -54,6 +70,23 @@ def decode_response(data: str | bytes, decrypt_key: str | None = None) -> dict |
             pass
 
     raise DecodeError(f"Failed to decode response (length={len(data)}, starts={data[:80]!r})")
+
+
+def _decode_b64_urlencoded(data: str) -> dict | list:
+    """Decode base64 > URL-decode > JSON.
+
+    StemWijzer municipality data (decrypt=true) uses this encoding:
+    base64 string > URL-encoded JSON > actual JSON.
+    """
+    # Add padding if needed
+    padding = 4 - len(data) % 4
+    if padding != 4:
+        data += "=" * padding
+
+    decoded_bytes = base64.b64decode(data)
+    url_encoded = decoded_bytes.decode("utf-8")
+    json_str = urllib.parse.unquote(url_encoded)
+    return json.loads(json_str)
 
 
 def _aes_decrypt(data: str, key: str) -> dict | list:
