@@ -1,6 +1,6 @@
 [project]
 name = "nl-voting-data-scraper"
-version = "0.1.0"
+version = "0.1.1"
 description = "Scrape Dutch voting advice (StemWijzer) data for any election"
 readme = "README.md"
 license = { text = "MIT" }
