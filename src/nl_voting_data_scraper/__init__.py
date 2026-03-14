@@ -13,11 +13,11 @@ from nl_voting_data_scraper.models import (
 from nl_voting_data_scraper.scraper import StemwijzerScraper
 
 __all__ = [
-    "StemwijzerScraper",
     "ElectionData",
     "ElectionIndexEntry",
     "Party",
     "PartyPosition",
     "Statement",
+    "StemwijzerScraper",
     "VotematchMeta",
 ]

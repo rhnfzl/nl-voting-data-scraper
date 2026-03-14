@@ -10,9 +10,13 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, Self
 
 from nl_voting_data_scraper.config import ElectionConfig
 from nl_voting_data_scraper.decoder import decode_response, extract_key_from_js
+
+if TYPE_CHECKING:
+    from types import TracebackType
 
 logger = logging.getLogger(__name__)
 
@@ -33,23 +37,28 @@ class BrowserScraper:
 
     def __init__(self, config: ElectionConfig):
         self.config = config
-        self._pw = None
-        self._browser = None
+        self._pw: Any = None
+        self._browser: Any = None
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> Self:
         try:
             from playwright.async_api import async_playwright
-        except ImportError:
+        except ImportError as err:
             raise ImportError(
                 "Playwright is required for browser scraping. "
                 "Install it with: pip install nl-voting-data-scraper[browser] "
                 "&& playwright install chromium"
-            )
+            ) from err
         self._pw = await async_playwright().start()
         self._browser = await self._pw.chromium.launch(headless=True)
         return self
 
-    async def __aexit__(self, *args):
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         if self._browser:
             await self._browser.close()
         if self._pw:
@@ -64,7 +73,7 @@ class BrowserScraper:
         result = InterceptedData()
         page = await self._browser.new_page()
 
-        async def handle_response(response):
+        async def handle_response(response: Any) -> None:
             resp_url = response.url
             content_type = response.headers.get("content-type", "")
 
@@ -131,14 +140,14 @@ class BrowserScraper:
         """Discover API endpoints and encryption keys by loading the frontend."""
         return await self.intercept_network()
 
-    async def scrape_municipality_dom(self, url: str) -> dict:
+    async def scrape_municipality_dom(self, url: str) -> dict[str, Any]:
         """Scrape a single municipality by clicking through the UI.
 
         This is the last-resort fallback that simulates user interaction.
         """
         page = await self._browser.new_page()
-        statements = []
-        parties_data = {}
+        statements: list[dict[str, Any]] = []
+        parties_data: dict[str, Any] = {}
 
         try:
             await page.goto(url, wait_until="networkidle", timeout=30000)
@@ -156,7 +165,8 @@ class BrowserScraper:
                     theme_el = page.locator(".statement__theme")
                     title_el = page.locator(".statement__title")
 
-                    theme = await theme_el.text_content(timeout=3000) if await theme_el.count() else ""
+                    theme_count = await theme_el.count()
+                    theme = await theme_el.text_content(timeout=3000) if theme_count else ""
                     title = await title_el.get_attribute("aria-label", timeout=3000) or ""
                     if not title:
                         title = await title_el.text_content(timeout=3000) or ""
@@ -170,7 +180,8 @@ class BrowserScraper:
                         if await more_info_btn.count():
                             await more_info_btn.click()
                             await page.wait_for_timeout(500)
-                            info_text = await page.locator(".statement__tab-text").text_content(timeout=2000)
+                            tab_text = page.locator(".statement__tab-text")
+                            info_text = await tab_text.text_content(timeout=2000)
                             statement["info"] = info_text.strip() if info_text else ""
                     except Exception:
                         pass

@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, Self
+
+if TYPE_CHECKING:
+    from nl_voting_data_scraper.browser_scraper import InterceptedData
 
 from nl_voting_data_scraper.api_scraper import APIScraper, APIScraperError
 from nl_voting_data_scraper.cache import ScrapeCache
@@ -54,15 +58,13 @@ class StemwijzerScraper:
         self._decrypt_key: str | None = None
         self._api: APIScraper | None = None
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> Self:
         if self.use_api:
-            self._api = APIScraper(
-                self.config, self.rate_limiter, self.cache, self._decrypt_key
-            )
+            self._api = APIScraper(self.config, self.rate_limiter, self.cache, self._decrypt_key)
             await self._api.__aenter__()
         return self
 
-    async def __aexit__(self, *args):
+    async def __aexit__(self, *args: object) -> None:
         if self._api:
             await self._api.__aexit__(*args)
 
@@ -93,9 +95,7 @@ class StemwijzerScraper:
 
         raise APIScraperError("All scraping methods failed")
 
-    async def scrape_one(
-        self, remote_id: str, language: str = "nl"
-    ) -> ElectionData:
+    async def scrape_one(self, remote_id: str, language: str = "nl") -> ElectionData:
         """Scrape a single municipality/election."""
         # Look up the correct source from the index (handles GM0014-nl vs GM0034)
         entry = await self._find_index_entry(remote_id, language)
@@ -121,9 +121,7 @@ class StemwijzerScraper:
 
         raise APIScraperError(f"Failed to scrape {entry.source}")
 
-    async def _find_index_entry(
-        self, remote_id: str, language: str = "nl"
-    ) -> ElectionIndexEntry:
+    async def _find_index_entry(self, remote_id: str, language: str = "nl") -> ElectionIndexEntry:
         """Find the correct index entry for a municipality.
 
         The source field varies: GM0034 (single language) vs GM0014-nl (multi-language).
@@ -144,8 +142,12 @@ class StemwijzerScraper:
         # Construct a best-guess entry if index lookup fails
         source = f"{remote_id}-{language}" if language != "nl" else remote_id
         return ElectionIndexEntry(
-            id=0, name=remote_id, source=source,
-            remoteId=remote_id, language=language, decrypt=True,
+            id=0,
+            name=remote_id,
+            source=source,
+            remoteId=remote_id,
+            language=language,
+            decrypt=True,
         )
 
     async def fetch_index(self) -> list[ElectionIndexEntry]:
@@ -160,15 +162,14 @@ class StemwijzerScraper:
         if self.use_browser:
             intercepted = await self._discover_via_browser()
             if intercepted.index:
-                return [
-                    ElectionIndexEntry.model_validate(e) for e in intercepted.index
-                ]
+                return [ElectionIndexEntry.model_validate(e) for e in intercepted.index]
 
         raise APIScraperError("Failed to fetch index")
 
-    async def discover_endpoints(self) -> dict:
+    async def discover_endpoints(self) -> dict[str, Any]:
         """Discover API endpoints (useful for debugging)."""
-        info = {"config": {"slug": self.config.slug, "data_url": self.config.data_url}}
+        config_info = {"slug": self.config.slug, "data_url": self.config.data_url}
+        info: dict[str, Any] = {"config": config_info}
 
         if self.use_api and self._api:
             working_url = await self._api.probe_data_url()
@@ -208,7 +209,7 @@ class StemwijzerScraper:
 
         return results
 
-    async def _discover_via_browser(self):
+    async def _discover_via_browser(self) -> InterceptedData:
         """Use Playwright to discover endpoints and capture data."""
         from nl_voting_data_scraper.browser_scraper import BrowserScraper
 

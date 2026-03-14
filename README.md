@@ -4,7 +4,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/nl-voting-data-scraper.svg)](https://pypi.org/project/nl-voting-data-scraper/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/nl-voting-data-scraper)](https://pypistats.org/packages/nl-voting-data-scraper)
-[![Python package](https://github.com/rhnfzl/nl-voting-data-scraper/actions/workflows/publish.yml/badge.svg)](https://github.com/rhnfzl/nl-voting-data-scraper/actions/workflows/publish.yml)
+[![Check](https://github.com/rhnfzl/nl-voting-data-scraper/actions/workflows/check.yml/badge.svg)](https://github.com/rhnfzl/nl-voting-data-scraper/actions/workflows/check.yml)
 [![Python Versions](https://img.shields.io/badge/Python-3.11%20|%203.12%20|%203.13-blue)](https://pypi.org/project/nl-voting-data-scraper/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 

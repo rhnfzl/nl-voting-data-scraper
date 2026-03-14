@@ -3,9 +3,9 @@
 import base64
 import json
 
-from nl_voting_data_scraper.decoder import decode_response, extract_key_from_js, DecodeError
-
 import pytest
+
+from nl_voting_data_scraper.decoder import DecodeError, decode_response, extract_key_from_js
 
 
 class TestDecodeResponse:

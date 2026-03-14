@@ -95,9 +95,7 @@ class ElectionData(BaseModel):
 
     parties: list[Party]
     statements: list[Statement]
-    shootoutStatements: list[Statement] = Field(
-        default_factory=list, alias="shootoutStatements"
-    )
+    shootoutStatements: list[Statement] = Field(default_factory=list, alias="shootoutStatements")
     votematch: VotematchMeta
 
     model_config = {"populate_by_name": True}

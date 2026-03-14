@@ -7,12 +7,13 @@ and optional AES decryption.
 from __future__ import annotations
 
 import logging
+from typing import Self
 
 import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from nl_voting_data_scraper.cache import ScrapeCache
-from nl_voting_data_scraper.config import DEFAULT_HEADERS, DATA_URL_PATTERNS, ElectionConfig
+from nl_voting_data_scraper.config import DATA_URL_PATTERNS, DEFAULT_HEADERS, ElectionConfig
 from nl_voting_data_scraper.decoder import DecodeError, decode_response
 from nl_voting_data_scraper.models import ElectionData, ElectionIndexEntry
 from nl_voting_data_scraper.rate_limiter import RateLimiter
@@ -40,7 +41,7 @@ class APIScraper:
         self.decrypt_key = decrypt_key
         self._client: httpx.AsyncClient | None = None
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> Self:
         self._client = httpx.AsyncClient(
             headers={
                 **DEFAULT_HEADERS,
@@ -52,7 +53,7 @@ class APIScraper:
         )
         return self
 
-    async def __aexit__(self, *args):
+    async def __aexit__(self, *args: object) -> None:
         if self._client:
             await self._client.aclose()
             self._client = None
@@ -109,9 +110,7 @@ class APIScraper:
         return [ElectionIndexEntry.model_validate(entry) for entry in data]
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, max=30))
-    async def fetch_election_data(
-        self, entry: ElectionIndexEntry
-    ) -> ElectionData:
+    async def fetch_election_data(self, entry: ElectionIndexEntry) -> ElectionData:
         """Fetch data for a single election/municipality."""
         # Check cache first
         if self.cache and self.cache.has(self.config.slug, entry.source):

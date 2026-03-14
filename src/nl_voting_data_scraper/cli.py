@@ -28,7 +28,7 @@ def setup_logging(verbose: bool) -> None:
 
 @click.group()
 @click.version_option()
-def cli():
+def cli() -> None:
     """nl-voting-data-scraper: Scrape Dutch voting advice (StemWijzer) data."""
 
 
@@ -56,7 +56,7 @@ def scrape(
     browser_only: bool,
     api_only: bool,
     verbose: bool,
-):
+) -> None:
     """Scrape StemWijzer data for an election.
 
     ELECTION is the election slug (e.g. gr2026, tk2025, eu2024).
@@ -66,7 +66,7 @@ def scrape(
     municipalities = list(municipality) if municipality else None
     cache_dir = None if no_cache else Path(".cache") / "nl-voting-data-scraper"
 
-    async def _run():
+    async def _run() -> None:
         scraper = StemwijzerScraper(
             election=election,
             rate_limit=rate_limit,
@@ -93,7 +93,7 @@ def scrape(
 
 
 @cli.command("list-elections")
-def list_elections():
+def list_elections() -> None:
     """List known elections."""
     table = Table(title="Known Elections")
     table.add_column("Slug", style="cyan")
@@ -117,11 +117,11 @@ def list_elections():
 @cli.command("list-municipalities")
 @click.argument("election")
 @click.option("-v", "--verbose", is_flag=True)
-def list_municipalities(election: str, verbose: bool):
+def list_municipalities(election: str, verbose: bool) -> None:
     """List available municipalities for an election."""
     setup_logging(verbose)
 
-    async def _run():
+    async def _run() -> None:
         async with StemwijzerScraper(election) as scraper:
             with console.status("Fetching index..."):
                 index = await scraper.fetch_index()
@@ -134,9 +134,7 @@ def list_municipalities(election: str, verbose: bool):
         table.add_column("Language")
 
         for i, entry in enumerate(index, 1):
-            table.add_row(
-                str(i), entry.name, entry.remoteId, entry.source, entry.language
-            )
+            table.add_row(str(i), entry.name, entry.remoteId, entry.source, entry.language)
 
         console.print(table)
         console.print(f"\nTotal: {len(index)} entries")
@@ -147,11 +145,11 @@ def list_municipalities(election: str, verbose: bool):
 @cli.command()
 @click.argument("election")
 @click.option("-v", "--verbose", is_flag=True)
-def discover(election: str, verbose: bool):
+def discover(election: str, verbose: bool) -> None:
     """Discover API endpoints for an election."""
     setup_logging(verbose)
 
-    async def _run():
+    async def _run() -> None:
         async with StemwijzerScraper(election) as scraper:
             with console.status("Discovering endpoints..."):
                 info = await scraper.discover_endpoints()

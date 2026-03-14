@@ -13,6 +13,7 @@ import base64
 import json
 import re
 import urllib.parse
+from typing import cast
 
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
@@ -58,7 +59,7 @@ def decode_response(data: str | bytes, decrypt_key: str | None = None) -> dict |
     # Strategy 3: base64 > JSON (without URL encoding)
     try:
         decoded = base64.b64decode(data)
-        return json.loads(decoded)
+        return cast(dict | list, json.loads(decoded))
     except Exception:
         pass
 
@@ -86,7 +87,7 @@ def _decode_b64_urlencoded(data: str) -> dict | list:
     decoded_bytes = base64.b64decode(data)
     url_encoded = decoded_bytes.decode("utf-8")
     json_str = urllib.parse.unquote(url_encoded)
-    return json.loads(json_str)
+    return cast(dict | list, json.loads(json_str))
 
 
 def _aes_decrypt(data: str, key: str) -> dict | list:
@@ -107,7 +108,7 @@ def _aes_decrypt(data: str, key: str) -> dict | list:
 
     cipher = AES.new(key_bytes, AES.MODE_CBC, iv)
     plaintext = unpad(cipher.decrypt(ciphertext), AES.block_size)
-    return json.loads(plaintext)
+    return cast(dict | list, json.loads(plaintext))
 
 
 def extract_key_from_js(js_source: str) -> str | None:

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any, cast
 
 from nl_voting_data_scraper.models import ElectionData
 
@@ -32,20 +33,17 @@ class ScrapeCache:
         data = json.loads(path.read_text(encoding="utf-8"))
         return ElectionData.model_validate(data)
 
-    def get_raw(self, election: str, source: str) -> dict | None:
+    def get_raw(self, election: str, source: str) -> dict[str, Any] | None:
         """Get cached result as raw dict."""
         path = self._key_path(election, source)
         if not path.exists():
             return None
-        return json.loads(path.read_text(encoding="utf-8"))
+        return cast(dict[str, Any], json.loads(path.read_text(encoding="utf-8")))
 
     def put(self, election: str, source: str, data: dict | ElectionData) -> None:
         """Cache a result."""
         path = self._key_path(election, source)
-        if isinstance(data, ElectionData):
-            json_data = data.model_dump(by_alias=True)
-        else:
-            json_data = data
+        json_data = data.model_dump(by_alias=True) if isinstance(data, ElectionData) else data
         path.write_text(json.dumps(json_data, ensure_ascii=False, indent=2), encoding="utf-8")
 
     def put_raw(self, election: str, source: str, data: str | bytes) -> None:
