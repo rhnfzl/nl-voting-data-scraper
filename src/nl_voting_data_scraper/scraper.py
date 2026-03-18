@@ -10,6 +10,10 @@ if TYPE_CHECKING:
     from nl_voting_data_scraper.browser_scraper import InterceptedData
 
 from nl_voting_data_scraper.api_scraper import APIScraper, APIScraperError
+from nl_voting_data_scraper.bundle_extractor import (
+    build_single_contest_index_entry,
+    normalize_contest_payload,
+)
 from nl_voting_data_scraper.cache import ScrapeCache
 from nl_voting_data_scraper.config import (
     ElectionConfig,
@@ -20,6 +24,9 @@ from nl_voting_data_scraper.models import ElectionData, ElectionIndexEntry
 from nl_voting_data_scraper.rate_limiter import RateLimiter
 
 logger = logging.getLogger(__name__)
+
+# Sentinel to distinguish "not passed" from None
+_UNSET = object()
 
 
 class StemwijzerScraper:
@@ -38,7 +45,7 @@ class StemwijzerScraper:
         self,
         election: str | ElectionConfig,
         rate_limit: float = 2.0,
-        cache_dir: str | Path | None = None,
+        cache_dir: str | Path | None | object = _UNSET,
         use_browser: bool = True,
         use_api: bool = True,
     ):
@@ -52,14 +59,23 @@ class StemwijzerScraper:
             self.config = election
 
         self.rate_limiter = RateLimiter(requests_per_second=rate_limit)
-        self.cache = ScrapeCache(cache_dir or Path(".cache") / "nl-voting-data-scraper")
+
+        # cache_dir=None explicitly disables caching; omitting it uses the default
+        if cache_dir is _UNSET:
+            self.cache: ScrapeCache | None = ScrapeCache(Path(".cache") / "nl-voting-data-scraper")
+        elif cache_dir is not None:
+            self.cache = ScrapeCache(cache_dir)  # type: ignore[arg-type]
+        else:
+            self.cache = None
+
         self.use_browser = use_browser
         self.use_api = use_api
         self._decrypt_key: str | None = None
         self._api: APIScraper | None = None
+        self._index_cache: list[ElectionIndexEntry] | None = None
 
     async def __aenter__(self) -> Self:
-        if self.use_api:
+        if self.use_api and self.config.supports_api:
             self._api = APIScraper(self.config, self.rate_limiter, self.cache, self._decrypt_key)
             await self._api.__aenter__()
         return self
@@ -77,12 +93,12 @@ class StemwijzerScraper:
 
         Args:
             municipalities: Specific GM codes (e.g. ["GM0014"]). None = all.
-            languages: Languages to scrape. None = all available.
+            languages: Language codes to include (e.g. ["nl", "en"]). None = all available.
         """
         # Try API first
         if self.use_api and self._api:
             try:
-                results = await self._api.fetch_all(municipalities)
+                results = await self._api.fetch_all(municipalities, languages)
                 if results:
                     logger.info(f"API scraping complete: {len(results)} entries")
                     return results
@@ -91,20 +107,35 @@ class StemwijzerScraper:
 
         # Fall back to browser
         if self.use_browser:
-            return await self._scrape_via_browser(municipalities)
+            results = await self._scrape_via_browser(municipalities)
+            if languages:
+                lang_set = set(languages)
+                results = [r for r in results if r.votematch.langcode in lang_set]
+            return results
 
         raise APIScraperError("All scraping methods failed")
 
-    async def scrape_one(self, remote_id: str, language: str = "nl") -> ElectionData:
-        """Scrape a single municipality/election."""
+    async def scrape_one(
+        self,
+        remote_id: str,
+        language: str = "nl",
+    ) -> ElectionData | None:
+        """Scrape a single municipality/election.
+
+        Returns None if the requested language is not available for this municipality.
+        Raises APIScraperError if scraping fails for other reasons.
+        """
         # Look up the correct source from the index (handles GM0014-nl vs GM0034)
         entry = await self._find_index_entry(remote_id, language)
+        if entry is None:
+            return None
 
         # Check cache
-        cached = self.cache.get(self.config.slug, entry.source)
-        if cached:
-            logger.info(f"Cache hit: {entry.source}")
-            return cached
+        if self.cache:
+            cached = self.cache.get(self.config.slug, entry.source)
+            if cached:
+                logger.info(f"Cache hit: {entry.source}")
+                return cached
 
         # Try API
         if self.use_api and self._api:
@@ -117,44 +148,71 @@ class StemwijzerScraper:
         if self.use_browser:
             results = await self._scrape_via_browser([remote_id])
             if results:
-                return results[0]
+                # Filter for the requested language
+                for r in results:
+                    if r.votematch.langcode == language:
+                        return r
+                # If no language match, return first result only if language is "nl"
+                # (some municipalities have a single entry without explicit language)
+                if language == "nl":
+                    return results[0]
+                return None
 
         raise APIScraperError(f"Failed to scrape {entry.source}")
 
-    async def _find_index_entry(self, remote_id: str, language: str = "nl") -> ElectionIndexEntry:
-        """Find the correct index entry for a municipality.
+    async def _find_index_entry(
+        self,
+        remote_id: str,
+        language: str = "nl",
+    ) -> ElectionIndexEntry | None:
+        """Find the correct index entry for a municipality and language.
 
-        The source field varies: GM0034 (single language) vs GM0014-nl (multi-language).
+        Returns None if the requested language is not available. Falls back to
+        the default language entry only when requesting "nl" (since some
+        municipalities have a single entry without an explicit language suffix).
         """
         try:
             index = await self.fetch_index()
-            # Exact match on remoteId + language
-            for e in index:
-                if e.remoteId == remote_id and e.language == language:
-                    return e
-            # Fallback: match just remoteId
+        except Exception:
+            # Index fetch failed entirely - construct a best-guess entry
+            # so scrape_one can attempt to fetch the data directly
+            source = f"{remote_id}-{language}" if language != "nl" else remote_id
+            return ElectionIndexEntry(
+                id=0,
+                name=remote_id,
+                source=source,
+                remoteId=remote_id,
+                language=language,
+                decrypt=True,
+            )
+
+        # Exact match on remoteId + language
+        for e in index:
+            if e.remoteId == remote_id and e.language == language:
+                return e
+
+        # For Dutch, also accept entries without explicit language suffix
+        # (e.g. "GM0034" with language="nl")
+        if language == "nl":
             for e in index:
                 if e.remoteId == remote_id:
                     return e
-        except Exception:
-            pass
 
-        # Construct a best-guess entry if index lookup fails
-        source = f"{remote_id}-{language}" if language != "nl" else remote_id
-        return ElectionIndexEntry(
-            id=0,
-            name=remote_id,
-            source=source,
-            remoteId=remote_id,
-            language=language,
-            decrypt=True,
-        )
+        # Language not available for this municipality
+        return None
 
     async def fetch_index(self) -> list[ElectionIndexEntry]:
-        """Fetch the election index."""
+        """Fetch the election index.
+
+        Results are cached in memory for the lifetime of the scraper instance.
+        """
+        if self._index_cache is not None:
+            return self._index_cache
+
         if self.use_api and self._api:
             try:
-                return await self._api.fetch_index()
+                self._index_cache = await self._api.fetch_index()
+                return self._index_cache
             except Exception as e:
                 logger.warning(f"API index fetch failed: {e}")
 
@@ -162,13 +220,36 @@ class StemwijzerScraper:
         if self.use_browser:
             intercepted = await self._discover_via_browser()
             if intercepted.index:
-                return [ElectionIndexEntry.model_validate(e) for e in intercepted.index]
+                self._index_cache = [
+                    ElectionIndexEntry.model_validate(e) for e in intercepted.index
+                ]
+                return self._index_cache
+            if intercepted.election_data and not self.config.has_municipalities:
+                self._index_cache = [
+                    build_single_contest_index_entry(
+                        self.config,
+                        data,
+                        source=source,
+                    )
+                    for source, data in intercepted.election_data.items()
+                ]
+                return self._index_cache
+            if intercepted.election_data and self.config.has_municipalities:
+                raise APIScraperError(
+                    "Browser captured contest payloads but could not discover the index for "
+                    f"multi-jurisdiction election {self.config.slug}"
+                )
 
         raise APIScraperError("Failed to fetch index")
 
     async def discover_endpoints(self) -> dict[str, Any]:
         """Discover API endpoints (useful for debugging)."""
-        config_info = {"slug": self.config.slug, "data_url": self.config.data_url}
+        config_info = {
+            "slug": self.config.slug,
+            "data_url": self.config.data_url,
+            "supports_api": self.config.supports_api,
+            "browser_urls": list(self.config.browser_urls),
+        }
         info: dict[str, Any] = {"config": config_info}
 
         if self.use_api and self._api:
@@ -181,6 +262,7 @@ class StemwijzerScraper:
             info["decrypt_key"] = intercepted.decrypt_key
             info["index_entries"] = len(intercepted.index)
             info["captured_data"] = list(intercepted.election_data.keys())
+            info["runtime_payloads"] = len(intercepted.runtime_payloads)
 
         return info
 
@@ -201,9 +283,11 @@ class StemwijzerScraper:
                 if gm_code not in municipalities:
                     continue
             try:
-                result = ElectionData.model_validate(data)
+                normalized = normalize_contest_payload(data, self.config, source=source)
+                result = ElectionData.model_validate(normalized)
                 results.append(result)
-                self.cache.put(self.config.slug, source, data)
+                if self.cache:
+                    self.cache.put(self.config.slug, source, normalized)
             except Exception as e:
                 logger.error(f"Failed to parse browser data for {source}: {e}")
 

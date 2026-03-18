@@ -31,5 +31,6 @@ class TestCLI:
         runner = CliRunner()
         result = runner.invoke(cli, ["scrape", "--help"])
         assert result.exit_code == 0
+        assert "--layout" in result.output
         assert "--municipality" in result.output
         assert "--output" in result.output

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -17,6 +17,8 @@ class ElectionConfig:
     context: str  # e.g. "2026GR", "2025TK"
     has_municipalities: bool = False
     description: str = ""
+    supports_api: bool = True
+    browser_urls: tuple[str, ...] = field(default_factory=tuple)
 
 
 KNOWN_ELECTIONS: dict[str, ElectionConfig] = {
@@ -70,6 +72,78 @@ KNOWN_ELECTIONS: dict[str, ElectionConfig] = {
         has_municipalities=True,  # provinces
         description="Provinciale Statenverkiezingen 2023 (Provincial elections 2023)",
     ),
+    "tk2021": ElectionConfig(
+        slug="tk2021",
+        election_type="national",
+        year=2021,
+        app_url="https://tweedekamer2021.stemwijzer.nl",
+        data_url="",
+        context="2021TK",
+        has_municipalities=False,
+        description="Tweede Kamerverkiezingen 2021 (Parliamentary elections 2021)",
+        supports_api=False,
+        browser_urls=(
+            "https://web.archive.org/web/20210210110640/https://tweedekamer2021.stemwijzer.nl/",
+            "https://web.archive.org/web/20201215103715/https://tweedekamer2021.stemwijzer.nl/",
+        ),
+    ),
+    "tk2017": ElectionConfig(
+        slug="tk2017",
+        election_type="national",
+        year=2017,
+        app_url="http://tweedekamer2017.stemwijzer.nl",
+        data_url="",
+        context="2017TK",
+        has_municipalities=False,
+        description="Tweede Kamerverkiezingen 2017 (Parliamentary elections 2017)",
+        supports_api=False,
+        browser_urls=(
+            "https://web.archive.org/web/20170206221248/http://tweedekamer2017.stemwijzer.nl/",
+            "https://web.archive.org/web/20170207112138/http://tweedekamer2017.stemwijzer.nl/",
+        ),
+    ),
+    "tk2012": ElectionConfig(
+        slug="tk2012",
+        election_type="national",
+        year=2012,
+        app_url="http://www.stemwijzer.nl/TK2012/index.html",
+        data_url="",
+        context="2012TK",
+        has_municipalities=False,
+        description="Tweede Kamerverkiezingen 2012 (Parliamentary elections 2012)",
+        supports_api=False,
+        browser_urls=(
+            "https://web.archive.org/web/20120902015428/http://www.stemwijzer.nl/TK2012/index.html",
+        ),
+    ),
+    "tk2010": ElectionConfig(
+        slug="tk2010",
+        election_type="national",
+        year=2010,
+        app_url="http://www.stemwijzer.nl/TweedeKamer2010/index.html",
+        data_url="",
+        context="2010TK",
+        has_municipalities=False,
+        description="Tweede Kamerverkiezingen 2010 (Parliamentary elections 2010)",
+        supports_api=False,
+        browser_urls=(
+            "https://web.archive.org/web/20150717111108/http://www.stemwijzer.nl/TweedeKamer2010/index.html",
+        ),
+    ),
+    "tk2006": ElectionConfig(
+        slug="tk2006",
+        election_type="national",
+        year=2006,
+        app_url="http://admin.stemwijzer.nl/tk2006/STATapp.html",
+        data_url="",
+        context="2006TK",
+        has_municipalities=False,
+        description="Tweede Kamerverkiezingen 2006 (Parliamentary elections 2006)",
+        supports_api=False,
+        browser_urls=(
+            "https://web.archive.org/web/20150717161702/http://admin.stemwijzer.nl/tk2006/STATapp.html",
+        ),
+    ),
 }
 
 
@@ -102,6 +176,8 @@ def build_custom_election(
     year: int = 2026,
     app_url: str | None = None,
     data_url: str | None = None,
+    supports_api: bool = True,
+    browser_urls: tuple[str, ...] = (),
 ) -> ElectionConfig:
     """Build a custom election config from a slug."""
     return ElectionConfig(
@@ -112,4 +188,6 @@ def build_custom_election(
         data_url=data_url or f"https://{slug}-data.stemwijzer.nl",
         context=f"{year}{slug.upper()[:2]}",
         has_municipalities=election_type in ("municipal", "provincial"),
+        supports_api=supports_api,
+        browser_urls=browser_urls,
     )

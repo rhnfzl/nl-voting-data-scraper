@@ -12,6 +12,15 @@ import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Self
 
+from nl_voting_data_scraper.bundle_extractor import (
+    BROWSER_STATE_CAPTURE_SCRIPT,
+    RUNTIME_CAPTURE_INIT_SCRIPT,
+    build_single_contest_index_entry,
+    extract_contests_from_browser_state,
+    extract_contests_from_js_bundles,
+    extract_contests_from_runtime_capture,
+    normalize_contest_payload,
+)
 from nl_voting_data_scraper.config import ElectionConfig
 from nl_voting_data_scraper.decoder import decode_response, extract_key_from_js
 
@@ -30,6 +39,8 @@ class InterceptedData:
     js_bundles: list[str] = field(default_factory=list)
     api_urls: list[str] = field(default_factory=list)
     decrypt_key: str | None = None
+    runtime_payloads: list[str] = field(default_factory=list)
+    browser_state: dict[str, Any] | None = None
 
 
 class BrowserScraper:
@@ -69,9 +80,32 @@ class BrowserScraper:
 
         This discovers API endpoints, captures data, and extracts encryption keys.
         """
-        url = url or self.config.app_url
+        candidate_urls = [url] if url else list(self.config.browser_urls or (self.config.app_url,))
+        last_result: InterceptedData | None = None
+        last_error: Exception | None = None
+
+        for candidate_url in candidate_urls:
+            try:
+                result = await self._intercept_single_url(candidate_url)
+            except Exception as error:  # pragma: no cover - exercised through retries
+                last_error = error
+                logger.warning(f"Browser capture failed for {candidate_url}: {error}")
+                continue
+
+            if self._has_capture(result):
+                return result
+            last_result = result
+
+        if last_result is not None:
+            return last_result
+        if last_error is not None:
+            raise last_error
+        return InterceptedData()
+
+    async def _intercept_single_url(self, url: str) -> InterceptedData:
         result = InterceptedData()
         page = await self._browser.new_page()
+        await page.add_init_script(script=RUNTIME_CAPTURE_INIT_SCRIPT)
 
         async def handle_response(response: Any) -> None:
             resp_url = response.url
@@ -131,10 +165,60 @@ class BrowserScraper:
             except Exception:
                 pass
 
+            try:
+                runtime_payloads = await page.evaluate(
+                    "() => globalThis.__stemwijzerParsedPayloads || []"
+                )
+                if isinstance(runtime_payloads, list):
+                    result.runtime_payloads = [
+                        item for item in runtime_payloads if isinstance(item, str)
+                    ]
+            except Exception:
+                pass
+
+            try:
+                browser_state = await page.evaluate(BROWSER_STATE_CAPTURE_SCRIPT)
+                if isinstance(browser_state, dict):
+                    result.browser_state = browser_state
+            except Exception:
+                pass
+
         finally:
             await page.close()
 
+        if not result.election_data:
+            contests = extract_contests_from_runtime_capture(result.runtime_payloads)
+            if not contests:
+                contests = extract_contests_from_browser_state(result.browser_state, self.config)
+            if not contests:
+                contests = extract_contests_from_js_bundles(result.js_bundles)
+
+            for contest in contests:
+                normalized = normalize_contest_payload(contest, self.config)
+                source = normalized["votematch"]["remote_id"]
+                language = normalized["votematch"]["langcode"]
+                source_name = source if language == "nl" else f"{source}-{language}"
+                result.election_data[source_name] = normalized
+
+        if not result.index and result.election_data and not self.config.has_municipalities:
+            first_source, first_payload = next(iter(result.election_data.items()))
+            entry = build_single_contest_index_entry(
+                self.config,
+                first_payload,
+                source=first_source,
+            )
+            result.index = [entry.model_dump(by_alias=True)]
+
         return result
+
+    def _has_capture(self, result: InterceptedData) -> bool:
+        return bool(
+            result.index
+            or result.election_data
+            or result.js_bundles
+            or result.runtime_payloads
+            or result.browser_state
+        )
 
     async def discover_endpoints(self) -> InterceptedData:
         """Discover API endpoints and encryption keys by loading the frontend."""

@@ -1,0 +1,1 @@
+window.__NUXT__={data:[JSON.parse('{"parties":[{"id":1,"name":"D66","statements":[{"id":101,"position":"agree","explanation":"Sneller bouwen helpt starters."}]}],"statements":[{"id":101,"index":1,"theme":"Wonen","title":"Nederland moet meer woningen bouwen"}],"shootoutStatements":[]}')]};

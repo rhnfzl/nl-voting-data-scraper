@@ -5,13 +5,14 @@ from __future__ import annotations
 import asyncio
 import logging
 from pathlib import Path
+from typing import cast
 
 import click
 from rich.console import Console
 from rich.table import Table
 
 from nl_voting_data_scraper.config import KNOWN_ELECTIONS
-from nl_voting_data_scraper.output import write_all
+from nl_voting_data_scraper.output import OutputLayout, write_all
 from nl_voting_data_scraper.scraper import StemwijzerScraper
 
 console = Console()
@@ -37,6 +38,13 @@ def cli() -> None:
 @click.option("-m", "--municipality", multiple=True, help="Specific GM codes (e.g. GM0014)")
 @click.option("-l", "--language", multiple=True, default=["nl"], help="Languages to scrape")
 @click.option("-o", "--output", "output_dir", default="./output", help="Output directory")
+@click.option(
+    "--layout",
+    type=click.Choice(["legacy", "engine"]),
+    default="legacy",
+    show_default=True,
+    help="Output layout",
+)
 @click.option("--combined", is_flag=True, help="Also write a combined.json file")
 @click.option("--rate-limit", type=float, default=2.0, help="Requests per second")
 @click.option("--no-cache", is_flag=True, help="Disable caching")
@@ -49,6 +57,7 @@ def scrape(
     municipality: tuple[str, ...],
     language: tuple[str, ...],
     output_dir: str,
+    layout: str,
     combined: bool,
     rate_limit: float,
     no_cache: bool,
@@ -66,6 +75,8 @@ def scrape(
     municipalities = list(municipality) if municipality else None
     cache_dir = None if no_cache else Path(".cache") / "nl-voting-data-scraper"
 
+    languages_list = list(language) if language else None
+
     async def _run() -> None:
         scraper = StemwijzerScraper(
             election=election,
@@ -76,14 +87,23 @@ def scrape(
         )
         async with scraper:
             with console.status(f"Scraping {election}..."):
-                results = await scraper.scrape(municipalities=municipalities)
+                results = await scraper.scrape(
+                    municipalities=municipalities,
+                    languages=languages_list,
+                )
 
         if not results:
             console.print("[red]No data scraped.[/red]")
             return
 
         out = Path(output_dir)
-        paths = write_all(results, out, write_combined=combined)
+        paths = write_all(
+            results,
+            out,
+            write_combined=combined,
+            layout=cast(OutputLayout, layout),
+            election_slug=election,
+        )
 
         console.print(f"\n[green]Scraped {len(results)} entries to {out}/[/green]")
         for name, path in paths.items():

@@ -1,7 +1,7 @@
 [project]
 name = "nl-voting-data-scraper"
-version = "0.2.0"
-description = "Scrape Dutch voting advice (StemWijzer) data for any election"
+version = "0.3.0"
+description = "Scrape Dutch voting advice (StemWijzer) data across live and archived elections"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.11"
@@ -29,6 +29,7 @@ dependencies = [
 [project.optional-dependencies]
 browser = ["playwright>=1.58"]
 dev = [
+    "build>=1.3",
     "pytest>=9.0",
     "pytest-asyncio>=1.3",
     "pytest-httpx>=0.36",

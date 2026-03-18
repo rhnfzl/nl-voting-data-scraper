@@ -143,11 +143,13 @@ class APIScraper:
     async def fetch_all(
         self,
         municipalities: list[str] | None = None,
+        languages: list[str] | None = None,
     ) -> list[ElectionData]:
         """Fetch all election data.
 
         Args:
             municipalities: Optional list of GM codes to filter (e.g. ["GM0014", "GM0034"]).
+            languages: Optional list of language codes to include (e.g. ["nl", "en"]).
         """
         index = await self.fetch_index()
 
@@ -155,6 +157,11 @@ class APIScraper:
             gm_set = set(municipalities)
             index = [e for e in index if e.remoteId in gm_set]
             logger.info(f"Filtered to {len(index)} entries matching {municipalities}")
+
+        if languages:
+            lang_set = set(languages)
+            index = [e for e in index if e.language in lang_set]
+            logger.info(f"Filtered to {len(index)} entries for languages {languages}")
 
         results = []
         for i, entry in enumerate(index, 1):
